@@ -68,7 +68,7 @@ jobs:
       - name: Build and push multi-platform Docker images
         run: |
           docker buildx build \
-            --platform linux/amd64,linux/amd64,linux/arm64 \
+            --platform linux/amd64,linux/arm64 \
             --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }} \
             --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:latest \
             --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:${{ env.BRANCH_NAME }} \
