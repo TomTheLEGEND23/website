@@ -1,0 +1,80 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      # - 'main'
+      - 'Dev'
+      # - 'Test-*'
+      # - 'Feature-*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 4: Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Step 5: Set branch name, tag, and repository name
+      - name: Set branch name, tag, and repository name
+        id: vars
+        run: |
+          # Convert username to lowercase
+          USERNAME=$(echo "${GITHUB_ACTOR}" | tr '[:upper:]' '[:lower:]')
+
+          # Extract repository name from owner/repo
+          REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+
+          # Extract branch name (strip 'refs/heads/')
+          BRANCH_NAME=${GITHUB_REF##*/}
+
+          # Replace slashes in branch name with dashes
+          BRANCH_NAME=${BRANCH_NAME//\//-}
+
+          # Get the current date and time in YYYY-MM-DD-HH.MM.SS format (with periods for time)
+          TIMESTAMP=$(date +'%Y-%m-%d-%H.%M.%S')
+
+          # Combine to form the image tag
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          echo "USERNAME=$USERNAME" >> $GITHUB_ENV
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${TIMESTAMP}-${BRANCH_NAME}" >> $GITHUB_ENV
+
+      # Step 6: Build and push multi-platform Docker images
+      - name: Build and push multi-platform Docker images
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/amd64,linux/arm64 \
+            --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:${{ env.IMAGE_TAG }} \
+            --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:latest \
+            --tag ghcr.io/${{ env.USERNAME }}/${{ env.REPO_NAME }}:${{ env.BRANCH_NAME }} \
+            --push .
+
+      # Step 7: Post-build cleanup (optional)
+      - name: Remove dangling images
+        run: |
+          docker image prune -f

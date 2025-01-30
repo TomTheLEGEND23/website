@@ -1,0 +1,11 @@
+#Docker Files
+dockerfile
+.dockerignore
+docker-compose.yaml
+
+#Git Files
+*.md
+.gitignore
+.git
+LICENSE
+.github/
