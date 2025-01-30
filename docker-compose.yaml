@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  nginx:
+    container_name: webserver
+    image: ghcr.io/tomthelegend23/website:latest
+    ports:
+      - 80:80
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
