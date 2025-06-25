@@ -93,6 +93,10 @@ jobs:
       pages: write
       id-token: write
     
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
     steps:
       # Step 1: Checkout the code
       - name: Checkout code
